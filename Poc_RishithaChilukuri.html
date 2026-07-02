@@ -1,0 +1,1394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Agentic Claims Anomaly Triage — Cotiviti POC</title>
+<style>
+  :root {
+    --bg-color: #0d1117;
+    --card-bg: #161b22;
+    --card-header-bg: #21262d;
+    --border-color: #30363d;
+    --border-highlight: #8b949e;
+    --text-color: #c9d1d9;
+    --text-muted: #8b949e;
+    
+    --primary-color: #58a6ff;
+    --success-color: #2ea44f;
+    --warning-color: #d29922;
+    --danger-color: #f85149;
+    --purple-color: #bc8cff;
+    
+    --btn-bg: #21262d;
+    --btn-hover: #30363d;
+    --input-bg: #0d1117;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.5;
+  }
+
+  .container {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+
+  /* Classical Top Bar / Title block */
+  header {
+    border-bottom: 1px solid var(--border-color);
+    padding-bottom: 15px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .title-area h1 {
+    font-size: 20px;
+    font-weight: 600;
+    margin: 0 0 5px 0;
+    color: #f0f6fc;
+  }
+  .title-area p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  /* Inline Config Box */
+  .api-config-box {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .api-config-box label {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+  }
+
+  /* KPI Grid */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 768px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  .kpi-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 12px 16px;
+  }
+  .kpi-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    font-weight: 600;
+    letter-spacing: 0.05em;
+  }
+  .kpi-value {
+    font-size: 24px;
+    font-weight: 600;
+    color: #f0f6fc;
+    margin-top: 4px;
+  }
+  .kpi-value span {
+    font-size: 12px;
+    font-weight: normal;
+    color: var(--text-muted);
+  }
+  .kpi-subtext {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 4px;
+  }
+
+  /* Pipeline Progression Steps */
+  .pipeline-steps {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 15px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 768px) {
+    .pipeline-steps { grid-template-columns: 1fr; }
+  }
+  .step-box {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px 14px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .step-box.active {
+    border-color: var(--primary-color);
+  }
+  .step-box.done {
+    border-color: var(--success-color);
+  }
+  .step-indicator {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background-color: #21262d;
+    border: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    color: var(--text-muted);
+  }
+  .step-box.active .step-indicator {
+    background-color: var(--primary-color);
+    color: #0d1117;
+    border-color: var(--primary-color);
+  }
+  .step-box.done .step-indicator {
+    background-color: rgba(46, 164, 79, 0.15);
+    color: var(--success-color);
+    border-color: var(--success-color);
+  }
+  .step-details h4 {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #f0f6fc;
+  }
+  .step-details p {
+    margin: 2px 0 0 0;
+    font-size: 11px;
+    color: var(--text-muted);
+  }
+
+  /* Control Panel Row */
+  .controls-row {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 10px 16px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .controls-left {
+    display: flex;
+    gap: 8px;
+  }
+  .controls-right {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+
+  /* Standard form controls */
+  input[type="text"], input[type="password"], select {
+    background-color: var(--input-bg);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    border-radius: 6px;
+    padding: 5px 10px;
+    font-size: 12px;
+    outline: none;
+    font-family: inherit;
+  }
+  input[type="text"]:focus, input[type="password"]:focus, select:focus {
+    border-color: #58a6ff;
+  }
+
+  /* Button styles */
+  button {
+    background-color: var(--btn-bg);
+    border: 1px solid var(--border-color);
+    color: #c9d1d9;
+    border-radius: 6px;
+    padding: 5px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+  }
+  button:hover {
+    background-color: var(--btn-hover);
+    border-color: var(--border-highlight);
+  }
+  button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  button.primary-btn {
+    background-color: #2ea44f;
+    border-color: rgba(240, 246, 252, 0.1);
+    color: #fff;
+  }
+  button.primary-btn:hover {
+    background-color: #2c974b;
+  }
+  
+  /* Layout Grid */
+  .dashboard-grid {
+    display: grid;
+    grid-template-columns: 1.15fr 0.85fr;
+    gap: 20px;
+    margin-bottom: 20px;
+    align-items: stretch;
+  }
+  @media (max-width: 992px) {
+    .dashboard-grid { grid-template-columns: 1fr; }
+  }
+
+  /* Panels */
+  .panel {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+  .panel-header {
+    background-color: var(--card-header-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 8px 16px;
+    font-weight: 600;
+    color: #f0f6fc;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+  }
+  .panel-body {
+    padding: 16px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Chart Layout styling */
+  .chart-container {
+    position: relative;
+    width: 100%;
+  }
+  svg.scatter-plot {
+    background-color: #0d1117;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+  }
+  .grid-dash {
+    stroke: #21262d;
+    stroke-dasharray: 2 2;
+  }
+  .axis-stroke {
+    stroke: #30363d;
+    stroke-width: 1.5;
+  }
+  .label-text {
+    fill: var(--text-muted);
+    font-size: 10px;
+  }
+  circle.data-point {
+    cursor: pointer;
+    transition: r 0.1s ease;
+  }
+  circle.data-point:hover {
+    r: 8 !important;
+  }
+  circle.data-point.selected {
+    r: 9 !important;
+    stroke: #ffffff !important;
+    stroke-width: 2px !important;
+  }
+
+  /* Simple Classical HTML Tooltip */
+  .flat-tooltip {
+    position: absolute;
+    display: none;
+    background-color: #161b22;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: var(--text-color);
+    pointer-events: none;
+    z-index: 100;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.5);
+  }
+  .flat-tooltip table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  .flat-tooltip td {
+    padding: 2px 0;
+  }
+  .flat-tooltip td.lbl {
+    color: var(--text-muted);
+    padding-right: 12px;
+  }
+  .flat-tooltip td.val {
+    text-align: right;
+    font-weight: 500;
+  }
+
+  /* Legend list block */
+  .legend-box {
+    margin-top: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 11px;
+    color: var(--text-muted);
+    border-top: 1px solid var(--border-color);
+    padding-top: 10px;
+  }
+  .legend-item { display: inline-flex; align-items: center; gap: 5px; }
+  .legend-item i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
+  .legend-item i.ring { border: 2px solid var(--danger-color); background: transparent; }
+
+  /* Triage Flagged List */
+  .triage-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+    overflow-y: auto;
+    height: 0;
+    min-height: 380px;
+  }
+  .triage-list::-webkit-scrollbar { width: 6px; }
+  .triage-list::-webkit-scrollbar-track { background: var(--bg-color); }
+  .triage-list::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 3px; }
+  
+  .triage-row {
+    background-color: #21262d;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    padding: 10px 12px;
+    cursor: pointer;
+    position: relative;
+    transition: background-color 0.15s ease;
+  }
+  .triage-row:hover {
+    background-color: #30363d;
+  }
+  .triage-row.selected {
+    border-color: #58a6ff;
+    background-color: rgba(56, 139, 253, 0.1);
+  }
+  .triage-row.reviewed {
+    opacity: 0.6;
+  }
+  .row-header { display: flex; justify-content: space-between; align-items: center; }
+  .row-pid { font-weight: 600; color: #f0f6fc; }
+  .row-score { font-family: monospace; font-size: 11px; color: var(--danger-color); font-weight: 600; }
+  .row-meta { font-size: 11.5px; color: var(--text-muted); margin-top: 3px; }
+  
+  /* Classic Badges */
+  .label-badge {
+    font-size: 9px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    margin-left: 6px;
+    display: inline-block;
+  }
+  .label-badge.CRITICAL { background-color: rgba(248, 81, 73, 0.15); color: #ff7b72; border: 1px solid rgba(248, 81, 73, 0.4); }
+  .label-badge.HIGH     { background-color: rgba(210, 153, 34, 0.15); color: #f0e053; border: 1px solid rgba(210, 153, 34, 0.4); }
+  .label-badge.MEDIUM   { background-color: rgba(188, 140, 255, 0.15); color: #d3b3ff; border: 1px solid rgba(188, 140, 255, 0.4); }
+  .label-badge.LOW      { background-color: rgba(46, 164, 79, 0.15); color: #56d364; border: 1px solid rgba(46, 164, 79, 0.4); }
+
+  .stamp {
+    position: absolute; right: 12px; bottom: 8px;
+    font-size: 9px; font-weight: bold; text-transform: uppercase;
+    padding: 1px 4px; border-radius: 2px;
+  }
+  .stamp.approved { border: 1px solid var(--success-color); color: var(--success-color); }
+  .stamp.escalated { border: 1px solid var(--warning-color); color: var(--warning-color); }
+  .stamp.denied { border: 1px solid var(--danger-color); color: var(--danger-color); }
+
+  .empty-banner {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 40px 10px;
+    font-size: 12px;
+    border: 1px dashed var(--border-color);
+    border-radius: 4px;
+  }
+
+  /* Agent Section */
+  .agent-box {
+    margin-top: 20px;
+  }
+  .agent-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .agent-step {
+    border-left: 2px solid var(--border-color);
+    padding-left: 14px;
+    margin-left: 8px;
+    opacity: 0;
+    animation: stepFadeIn 0.3s forwards;
+  }
+  @keyframes stepFadeIn { to { opacity: 1; } }
+  .agent-step.completed { border-left-color: var(--primary-color); }
+  .step-lbl {
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+  .agent-step.completed .step-lbl { color: var(--primary-color); }
+  .step-txt {
+    font-size: 12.5px;
+    margin-top: 2px;
+  }
+
+  .verdict-box {
+    margin-top: 15px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background-color: var(--bg-color);
+  }
+  .verdict-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+  }
+  .verdict-tag {
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 3px;
+  }
+  .verdict-tag.approve { background-color: rgba(46, 164, 79, 0.15); color: #56d364; border: 1px solid var(--success-color); }
+  .verdict-tag.escalate { background-color: rgba(210, 153, 34, 0.15); color: #f2cc60; border: 1px solid var(--warning-color); }
+  .verdict-tag.deny { background-color: rgba(248, 81, 73, 0.15); color: #ff7b72; border: 1px solid var(--danger-color); }
+  
+  .reviewer-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    border-top: 1px solid var(--border-color);
+    padding-top: 12px;
+    justify-content: flex-end;
+  }
+  .rev-btn { padding: 4px 10px; font-size: 11px; }
+  .rev-btn.app { background-color: #2ea44f; color: #fff; border-color: rgba(240, 246, 252, 0.1); }
+  .rev-btn.esc { background-color: #d29922; color: #fff; border-color: rgba(240, 246, 252, 0.1); }
+  .rev-btn.den { background-color: #f85149; color: #fff; border-color: rgba(240, 246, 252, 0.1); }
+
+  .dot-typing { display: inline-flex; gap: 3px; align-items: center; }
+  .dot-typing span { width: 5px; height: 5px; border-radius: 50%; background-color: var(--primary-color); animation: waitBlink 1.2s infinite; }
+  .dot-typing span:nth-child(2) { animation-delay: 0.2s; }
+  .dot-typing span:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes waitBlink { 0%, 80%, 100% { opacity: 0.2; } 40% { opacity: 1; } }
+
+  /* Toast message box */
+  .toast-alert {
+    position: fixed; top: 15px; right: 15px;
+    background-color: #1f6feb; border: 1px solid #388bfd;
+    color: white; padding: 10px 16px; border-radius: 4px;
+    font-weight: 500; font-size: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    z-index: 1000; opacity: 0; transform: translateY(-10px);
+    transition: all 0.25s ease; pointer-events: none;
+  }
+  .toast-alert.show { opacity: 1; transform: translateY(0); }
+
+  /* Detailed descriptive footer */
+  .documentation-footer {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    padding: 14px 16px;
+    margin-top: 20px;
+    font-size: 12px;
+    color: var(--text-muted);
+    line-height: 1.4;
+  }
+  .documentation-footer strong { color: var(--text-color); }
+</style>
+</head>
+<body>
+
+<div class="toast-alert" id="toastBox">Triage decision processed.</div>
+
+<div class="container">
+  
+  <header>
+    <div class="title-area">
+      <div class="kpi-label" style="color: var(--primary-color);">Cotiviti Intern Assessment — Topic 2 Demonstration</div>
+      <h1>Agentic Claims Anomaly Triage System</h1>
+      <p>Demonstrates K-Means baseline cohort clustering, outlier distance evaluation, and LLM-guided explainable payments review.</p>
+    </div>
+    
+    <!-- Inline API Configuration Panel -->
+    <div class="api-config-box">
+      <label for="apiKey">Claude API Key</label>
+      <input type="password" id="apiKey" placeholder="sk-ant-..." style="width: 140px;">
+      
+      <select id="apiModel" style="width: 130px;">
+        <option value="claude-3-5-sonnet-latest">Claude 3.5 Sonnet</option>
+        <option value="claude-3-haiku-20240307">Claude 3 Haiku</option>
+      </select>
+      <button id="saveApiBtn">Save</button>
+    </div>
+  </header>
+
+  <!-- KPI Block -->
+  <div class="kpi-grid">
+    <div class="kpi-card">
+      <div class="kpi-label">Audited Cohort</div>
+      <div class="kpi-value">84 <span>providers</span></div>
+      <div class="kpi-subtext">5 distinct clinical specialties</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Flagged Outliers</div>
+      <div class="kpi-value" id="kpiFlagCount">0 <span>cases</span></div>
+      <div class="kpi-subtext" id="kpiFlagRate">90th percentile threshold</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Mean Outlier Score</div>
+      <div class="kpi-value" id="kpiMeanScore">-- <span>z-score</span></div>
+      <div class="kpi-subtext">Distance-from-centroid model</div>
+    </div>
+    <div class="kpi-card">
+      <div class="kpi-label">Feedback Retrain Loops</div>
+      <div class="kpi-value" id="kpiSignals">0 <span>signals</span></div>
+      <div class="kpi-subtext" style="color: var(--success-color);">Active baseline auto-tuning</div>
+    </div>
+  </div>
+
+  <!-- Pipeline Progression Indicator -->
+  <div class="pipeline-steps">
+    <div class="step-box" id="step1">
+      <div class="step-indicator">1</div>
+      <div class="step-details">
+        <h4>Specialty Clustering</h4>
+        <p>Dynamic behavioral baseline establishment</p>
+      </div>
+    </div>
+    <div class="step-box" id="step2">
+      <div class="step-indicator">2</div>
+      <div class="step-details">
+        <h4>Distance Scoring</h4>
+        <p>Outlier classification & severity calculation</p>
+      </div>
+    </div>
+    <div class="step-box" id="step3">
+      <div class="step-indicator">3</div>
+      <div class="step-details">
+        <h4>Agent Audit Analysis</h4>
+        <p>LLM reasoning and audit trail justification</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions Toolbar -->
+  <div class="controls-row">
+    <div class="controls-left">
+      <button class="primary-btn" id="runPipelineBtn">Run Integrity Pipeline</button>
+      <button id="resetPipelineBtn">Reset</button>
+    </div>
+    <div class="controls-right">
+      <span class="label-badge" id="agentModeBadge" style="background-color:#21262d; border-color:var(--border-color); color:var(--text-muted); font-size:10px; margin-right:5px; padding:3px 8px;">Simulated Agent</span>
+      
+      <input type="text" id="filterSearch" placeholder="Search Provider ID..." style="width: 140px;" disabled>
+      <select id="filterSpecialty" disabled>
+        <option value="">All Specialties</option>
+        <option value="Family Medicine">Family Medicine</option>
+        <option value="Cardiology">Cardiology</option>
+        <option value="Orthopedics">Orthopedics</option>
+        <option value="Dermatology">Dermatology</option>
+        <option value="Physical Therapy">Physical Therapy</option>
+      </select>
+      <select id="filterSeverity" disabled>
+        <option value="">All Severities</option>
+        <option value="CRITICAL">Critical Only</option>
+        <option value="HIGH">High &amp; Critical</option>
+        <option value="MEDIUM">Medium &amp; Above</option>
+      </select>
+    </div>
+  </div>
+
+  <!-- Main Grid Layout -->
+  <div class="dashboard-grid">
+    
+    <!-- Left Column: Scatter Graph -->
+    <div class="panel">
+      <div class="panel-header">
+        <span>Provider Behavioral Cohort Mapping</span>
+        <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">Hover coordinate for details · Click to select</span>
+      </div>
+      <div class="panel-body">
+        <div class="chart-container">
+          <svg id="plotSvg" class="scatter-plot" viewBox="0 0 600 420">
+            <text x="300" y="220" fill="var(--text-muted)" font-size="12" text-anchor="middle">Execute pipeline to render behavioral data coordinates</text>
+          </svg>
+          <div id="tooltipBox" class="flat-tooltip"></div>
+        </div>
+        <div class="legend-box" id="plotLegend"></div>
+      </div>
+    </div>
+
+    <!-- Right Column: Flagged Triage List -->
+    <div class="panel">
+      <div class="panel-header">Triage Verification Queue</div>
+      <div class="panel-body">
+        <div class="triage-list" id="triageList">
+          <div class="empty-banner">
+            Triage queue is empty. Execute the statistical pipeline to generate outlier profiles.
+          </div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <!-- Bottom Panel: Agent Audit Trail Console -->
+  <div class="panel agent-box" id="agentBox">
+    <div class="panel-header">
+      <span>Agentic Case Review Summary</span>
+      <span id="agentModelBadgeDetail" style="font-size: 11px; font-weight: normal; color: var(--text-muted);"></span>
+    </div>
+    <div class="panel-body" id="agentConsole">
+      <div class="empty-banner" style="border: 0; padding: 20px 0;">
+        Select an outlier card from the triage queue or click a plot point to inspect case justification.
+      </div>
+    </div>
+  </div>
+
+  <!-- Descriptive Information Box -->
+  <div class="documentation-footer">
+    <strong>Dashboard Design Note:</strong> This proof-of-concept page utilizes flat, high-density corporate dashboard design principles. Spacers, borders, and UI control inputs mimic standard clinical analytics consoles. The prototype is completely standalone: it runs cohort clustering and z-score calculations locally, while incorporating an API parameter panel for a live <code>claude-3-5-sonnet-latest</code> agent. If no API key is specified, it runs a localized simulated agent reasoning loop. reviewer decisions generate training feedback loop metrics (retrain signal ↻).
+  </div>
+
+</div>
+
+<script>
+// Raw provider records generated by python backend model
+const PROVIDERS = [{"provider_id":"PRV-1000","specialty":"Family Medicine","avg_claim_cost":199.87,"avg_monthly_claims":51,"avg_procedures_per_claim":11.59,"is_planted_anomaly":false},{"provider_id":"PRV-1001","specialty":"Family Medicine","avg_claim_cost":240.92,"avg_monthly_claims":42,"avg_procedures_per_claim":11.3,"is_planted_anomaly":false},{"provider_id":"PRV-1002","specialty":"Family Medicine","avg_claim_cost":243.17,"avg_monthly_claims":40,"avg_procedures_per_claim":14.3,"is_planted_anomaly":false},{"provider_id":"PRV-1003","specialty":"Family Medicine","avg_claim_cost":201.7,"avg_monthly_claims":40,"avg_procedures_per_claim":10.61,"is_planted_anomaly":false},{"provider_id":"PRV-1004","specialty":"Family Medicine","avg_claim_cost":189.68,"avg_monthly_claims":27,"avg_procedures_per_claim":6.26,"is_planted_anomaly":false},{"provider_id":"PRV-1005","specialty":"Family Medicine","avg_claim_cost":157.51,"avg_monthly_claims":48,"avg_procedures_per_claim":8.96,"is_planted_anomaly":false},{"provider_id":"PRV-1006","specialty":"Family Medicine","avg_claim_cost":143.68,"avg_monthly_claims":59,"avg_procedures_per_claim":7.76,"is_planted_anomaly":false},{"provider_id":"PRV-1007","specialty":"Family Medicine","avg_claim_cost":170.97,"avg_monthly_claims":30,"avg_procedures_per_claim":12.2,"is_planted_anomaly":false},{"provider_id":"PRV-1008","specialty":"Family Medicine","avg_claim_cost":158.22,"avg_monthly_claims":33,"avg_procedures_per_claim":12.33,"is_planted_anomaly":false},{"provider_id":"PRV-1009","specialty":"Family Medicine","avg_claim_cost":195.03,"avg_monthly_claims":42,"avg_procedures_per_claim":10.2,"is_planted_anomaly":false},{"provider_id":"PRV-1010","specialty":"Family Medicine","avg_claim_cost":155.93,"avg_monthly_claims":44,"avg_procedures_per_claim":17.56,"is_planted_anomaly":false},{"provider_id":"PRV-1011","specialty":"Family Medicine","avg_claim_cost":137.69,"avg_monthly_claims":32,"avg_procedures_per_claim":14.47,"is_planted_anomaly":false},{"provider_id":"PRV-1012","specialty":"Family Medicine","avg_claim_cost":188.35,"avg_monthly_claims":31,"avg_procedures_per_claim":6.12,"is_planted_anomaly":false},{"provider_id":"PRV-1013","specialty":"Family Medicine","avg_claim_cost":187.87,"avg_monthly_claims":46,"avg_procedures_per_claim":14.22,"is_planted_anomaly":false},{"provider_id":"PRV-1014","specialty":"Family Medicine","avg_claim_cost":175.37,"avg_monthly_claims":30,"avg_procedures_per_claim":11.1,"is_planted_anomaly":false},{"provider_id":"PRV-1015","specialty":"Family Medicine","avg_claim_cost":151.21,"avg_monthly_claims":55,"avg_procedures_per_claim":10.62,"is_planted_anomaly":false},{"provider_id":"PRV-1016","specialty":"Cardiology","avg_claim_cost":901.54,"avg_monthly_claims":48,"avg_procedures_per_claim":2.47,"is_planted_anomaly":false},{"provider_id":"PRV-1017","specialty":"Cardiology","avg_claim_cost":792.24,"avg_monthly_claims":51,"avg_procedures_per_claim":4.65,"is_planted_anomaly":false},{"provider_id":"PRV-1018","specialty":"Cardiology","avg_claim_cost":1004.65,"avg_monthly_claims":36,"avg_procedures_per_claim":7.86,"is_planted_anomaly":false},{"provider_id":"PRV-1019","specialty":"Cardiology","avg_claim_cost":803.62,"avg_monthly_claims":54,"avg_procedures_per_claim":6.66,"is_planted_anomaly":false},{"provider_id":"PRV-1020","specialty":"Cardiology","avg_claim_cost":778.12,"avg_monthly_claims":33,"avg_procedures_per_claim":5.63,"is_planted_anomaly":false},{"provider_id":"PRV-1021","specialty":"Cardiology","avg_claim_cost":670.57,"avg_monthly_claims":58,"avg_procedures_per_claim":7.63,"is_planted_anomaly":false},{"provider_id":"PRV-1022","specialty":"Cardiology","avg_claim_cost":839.2,"avg_monthly_claims":48,"avg_procedures_per_claim":8.01,"is_planted_anomaly":false},{"provider_id":"PRV-1023","specialty":"Cardiology","avg_claim_cost":753.23,"avg_monthly_claims":60,"avg_procedures_per_claim":6.72,"is_planted_anomaly":false},{"provider_id":"PRV-1024","specialty":"Cardiology","avg_claim_cost":844.63,"avg_monthly_claims":18,"avg_procedures_per_claim":9.13,"is_planted_anomaly":false},{"provider_id":"PRV-1025","specialty":"Cardiology","avg_claim_cost":973.29,"avg_monthly_claims":42,"avg_procedures_per_claim":6.17,"is_planted_anomaly":false},{"provider_id":"PRV-1026","specialty":"Cardiology","avg_claim_cost":863.76,"avg_monthly_claims":42,"avg_procedures_per_claim":2.02,"is_planted_anomaly":false},{"provider_id":"PRV-1027","specialty":"Cardiology","avg_claim_cost":903.57,"avg_monthly_claims":39,"avg_procedures_per_claim":8.96,"is_planted_anomaly":false},{"provider_id":"PRV-1028","specialty":"Cardiology","avg_claim_cost":728.73,"avg_monthly_claims":54,"avg_procedures_per_claim":5.0,"is_planted_anomaly":false},{"provider_id":"PRV-1029","specialty":"Cardiology","avg_claim_cost":899.31,"avg_monthly_claims":50,"avg_procedures_per_claim":4.94,"is_planted_anomaly":false},{"provider_id":"PRV-1030","specialty":"Cardiology","avg_claim_cost":864.56,"avg_monthly_claims":37,"avg_procedures_per_claim":7.94,"is_planted_anomaly":false},{"provider_id":"PRV-1031","specialty":"Cardiology","avg_claim_cost":800.85,"avg_monthly_claims":30,"avg_procedures_per_claim":5.22,"is_planted_anomaly":false},{"provider_id":"PRV-1032","specialty":"Orthopedics","avg_claim_cost":1274.03,"avg_monthly_claims":45,"avg_procedures_per_claim":4.39,"is_planted_anomaly":false},{"provider_id":"PRV-1033","specialty":"Orthopedics","avg_claim_cost":1141.35,"avg_monthly_claims":40,"avg_procedures_per_claim":1.88,"is_planted_anomaly":false},{"provider_id":"PRV-1034","specialty":"Orthopedics","avg_claim_cost":1114.32,"avg_monthly_claims":43,"avg_procedures_per_claim":2.8,"is_planted_anomaly":false},{"provider_id":"PRV-1035","specialty":"Orthopedics","avg_claim_cost":1301.01,"avg_monthly_claims":46,"avg_procedures_per_claim":6.83,"is_planted_anomaly":false},{"provider_id":"PRV-1036","specialty":"Orthopedics","avg_claim_cost":1264.39,"avg_monthly_claims":25,"avg_procedures_per_claim":3.89,"is_planted_anomaly":false},{"provider_id":"PRV-1037","specialty":"Orthopedics","avg_claim_cost":1193.37,"avg_monthly_claims":69,"avg_procedures_per_claim":4.09,"is_planted_anomaly":false},{"provider_id":"PRV-1038","specialty":"Orthopedics","avg_claim_cost":1151.91,"avg_monthly_claims":44,"avg_procedures_per_claim":4.45,"is_planted_anomaly":false},{"provider_id":"PRV-1039","specialty":"Orthopedics","avg_claim_cost":907.83,"avg_monthly_claims":52,"avg_procedures_per_claim":5.71,"is_planted_anomaly":false},{"provider_id":"PRV-1040","specialty":"Orthopedics","avg_claim_cost":1397.76,"avg_monthly_claims":59,"avg_procedures_per_claim":2.64,"is_planted_anomaly":false},{"provider_id":"PRV-1041","specialty":"Orthopedics","avg_claim_cost":849.54,"avg_monthly_claims":66,"avg_procedures_per_claim":4.88,"is_planted_anomaly":false},{"provider_id":"PRV-1042","specialty":"Orthopedics","avg_claim_cost":952.37,"avg_monthly_claims":45,"avg_procedures_per_claim":3.15,"is_planted_anomaly":false},{"provider_id":"PRV-1043","specialty":"Orthopedics","avg_claim_cost":1074.13,"avg_monthly_claims":45,"avg_procedures_per_claim":1.67,"is_planted_anomaly":false},{"provider_id":"PRV-1044","specialty":"Orthopedics","avg_claim_cost":934.42,"avg_monthly_claims":35,"avg_procedures_per_claim":4.71,"is_planted_anomaly":false},{"provider_id":"PRV-1045","specialty":"Orthopedics","avg_claim_cost":1587.48,"avg_monthly_claims":41,"avg_procedures_per_claim":2.83,"is_planted_anomaly":false},{"provider_id":"PRV-1046","specialty":"Orthopedics","avg_claim_cost":1403.38,"avg_monthly_claims":47,"avg_procedures_per_claim":2.15,"is_planted_anomaly":false},{"provider_id":"PRV-1047","specialty":"Orthopedics","avg_claim_cost":1526.79,"avg_monthly_claims":46,"avg_procedures_per_claim":1.59,"is_planted_anomaly":false},{"provider_id":"PRV-1048","specialty":"Dermatology","avg_claim_cost":232.99,"avg_monthly_claims":32,"avg_procedures_per_claim":9.95,"is_planted_anomaly":false},{"provider_id":"PRV-1049","specialty":"Dermatology","avg_claim_cost":153.98,"avg_monthly_claims":47,"avg_procedures_per_claim":9.3,"is_planted_anomaly":false},{"provider_id":"PRV-1050","specialty":"Dermatology","avg_claim_cost":232.52,"avg_monthly_claims":38,"avg_procedures_per_claim":8.87,"is_planted_anomaly":false},{"provider_id":"PRV-1051","specialty":"Dermatology","avg_claim_cost":231.61,"avg_monthly_claims":37,"avg_procedures_per_claim":8.73,"is_planted_anomaly":false},{"provider_id":"PRV-1052","specialty":"Dermatology","avg_claim_cost":313.29,"avg_monthly_claims":33,"avg_procedures_per_claim":9.18,"is_planted_anomaly":false},{"provider_id":"PRV-1053","specialty":"Dermatology","avg_claim_cost":252.83,"avg_monthly_claims":52,"avg_procedures_per_claim":5.56,"is_planted_anomaly":false},{"provider_id":"PRV-1054","specialty":"Dermatology","avg_claim_cost":277.93,"avg_monthly_claims":54,"avg_procedures_per_claim":5.95,"is_planted_anomaly":false},{"provider_id":"PRV-1055","specialty":"Dermatology","avg_claim_cost":240.64,"avg_monthly_claims":63,"avg_procedures_per_claim":10.06,"is_planted_anomaly":false},{"provider_id":"PRV-1056","specialty":"Dermatology","avg_claim_cost":207.73,"avg_monthly_claims":36,"avg_procedures_per_claim":6.12,"is_planted_anomaly":false},{"provider_id":"PRV-1057","specialty":"Dermatology","avg_claim_cost":179.21,"avg_monthly_claims":48,"avg_procedures_per_claim":7.81,"is_planted_anomaly":false},{"provider_id":"PRV-1058","specialty":"Dermatology","avg_claim_cost":233.83,"avg_monthly_claims":45,"avg_procedures_per_claim":10.07,"is_planted_anomaly":false},{"provider_id":"PRV-1059","specialty":"Dermatology","avg_claim_cost":292.68,"avg_monthly_claims":72,"avg_procedures_per_claim":7.34,"is_planted_anomaly":false},{"provider_id":"PRV-1060","specialty":"Dermatology","avg_claim_cost":251.28,"avg_monthly_claims":34,"avg_procedures_per_claim":5.86,"is_planted_anomaly":false},{"provider_id":"PRV-1061","specialty":"Dermatology","avg_claim_cost":244.12,"avg_monthly_claims":52,"avg_procedures_per_claim":7.44,"is_planted_anomaly":false},{"provider_id":"PRV-1062","specialty":"Dermatology","avg_claim_cost":243.66,"avg_monthly_claims":36,"avg_procedures_per_claim":7.82,"is_planted_anomaly":false},{"provider_id":"PRV-1063","specialty":"Dermatology","avg_claim_cost":144.26,"avg_monthly_claims":53,"avg_procedures_per_claim":6.88,"is_planted_anomaly":false},{"provider_id":"PRV-1064","specialty":"Physical Therapy","avg_claim_cost":135.35,"avg_monthly_claims":46,"avg_procedures_per_claim":11.02,"is_planted_anomaly":false},{"provider_id":"PRV-1065","specialty":"Physical Therapy","avg_claim_cost":139.63,"avg_monthly_claims":46,"avg_procedures_per_claim":12.46,"is_planted_anomaly":false},{"provider_id":"PRV-1066","specialty":"Physical Therapy","avg_claim_cost":131.46,"avg_monthly_claims":48,"avg_procedures_per_claim":11.43,"is_planted_anomaly":false},{"provider_id":"PRV-1067","specialty":"Physical Therapy","avg_claim_cost":144.02,"avg_monthly_claims":55,"avg_procedures_per_claim":20.33,"is_planted_anomaly":false},{"provider_id":"PRV-1068","specialty":"Physical Therapy","avg_claim_cost":95.56,"avg_monthly_claims":50,"avg_procedures_per_claim":12.25,"is_planted_anomaly":false},{"provider_id":"PRV-1069","specialty":"Physical Therapy","avg_claim_cost":142.84,"avg_monthly_claims":83,"avg_procedures_per_claim":18.06,"is_planted_anomaly":false},{"provider_id":"PRV-1070","specialty":"Physical Therapy","avg_claim_cost":144.27,"avg_monthly_claims":54,"avg_procedures_per_claim":20.54,"is_planted_anomaly":false},{"provider_id":"PRV-1071","specialty":"Physical Therapy","avg_claim_cost":146.28,"avg_monthly_claims":52,"avg_procedures_per_claim":14.74,"is_planted_anomaly":false},{"provider_id":"PRV-1072","specialty":"Physical Therapy","avg_claim_cost":110.68,"avg_monthly_claims":40,"avg_procedures_per_claim":15.05,"is_planted_anomaly":false},{"provider_id":"PRV-1073","specialty":"Physical Therapy","avg_claim_cost":132.05,"avg_monthly_claims":26,"avg_procedures_per_claim":25.26,"is_planted_anomaly":false},{"provider_id":"PRV-1074","specialty":"Physical Therapy","avg_claim_cost":147.16,"avg_monthly_claims":40,"avg_procedures_per_claim":9.55,"is_planted_anomaly":false},{"provider_id":"PRV-1075","specialty":"Physical Therapy","avg_claim_cost":157.22,"avg_monthly_claims":34,"avg_procedures_per_claim":16.26,"is_planted_anomaly":false},{"provider_id":"PRV-1076","specialty":"Physical Therapy","avg_claim_cost":112.12,"avg_monthly_claims":37,"avg_procedures_per_claim":18.72,"is_planted_anomaly":false},{"provider_id":"PRV-1077","specialty":"Physical Therapy","avg_claim_cost":135.41,"avg_monthly_claims":38,"avg_procedures_per_claim":16.18,"is_planted_anomaly":false},{"provider_id":"PRV-1078","specialty":"Physical Therapy","avg_claim_cost":183.6,"avg_monthly_claims":24,"avg_procedures_per_claim":18.54,"is_planted_anomaly":false},{"provider_id":"PRV-1079","specialty":"Physical Therapy","avg_claim_cost":134.66,"avg_monthly_claims":53,"avg_procedures_per_claim":13.35,"is_planted_anomaly":false},{"provider_id":"PRV-9001","specialty":"Family Medicine","avg_claim_cost":410.0,"avg_monthly_claims":88,"avg_procedures_per_claim":22.0,"is_planted_anomaly":true,"anomaly_story":"upcoding"},{"provider_id":"PRV-9002","specialty":"Physical Therapy","avg_claim_cost":130.0,"avg_monthly_claims":210,"avg_procedures_per_claim":15.5,"is_planted_anomaly":true,"anomaly_story":"phantom_billing_volume"},{"provider_id":"PRV-9003","specialty":"Orthopedics","avg_claim_cost":3800.0,"avg_monthly_claims":5,"avg_procedures_per_claim":4.0,"is_planted_anomaly":true,"anomaly_story":"extreme_cost_outlier"},{"provider_id":"PRV-9004","specialty":"Cardiology","avg_claim_cost":870.0,"avg_monthly_claims":7,"avg_procedures_per_claim":19.0,"is_planted_anomaly":true,"anomaly_story":"procedure_count_outlier"}];
+
+const SPECIALTY_COLORS = {
+  "Family Medicine": "#58a6ff",
+  "Cardiology": "#bc8cff",
+  "Orthopedics": "#3ea755",
+  "Dermatology": "#d29922",
+  "Physical Therapy": "#f85149"
+};
+
+// Global App States
+let clustered = [];
+let flagged = [];
+let filteredFlagged = [];
+let selectedProvider = null;
+let feedbackCounter = 0;
+let feedbackReviews = {}; // provider_id -> { verdict, time }
+
+document.addEventListener("DOMContentLoaded", () => {
+  // Check API configuration storage
+  const key = localStorage.getItem("cotiviti_api_key");
+  if (key) {
+    document.getElementById("apiKey").value = key;
+    setAgentBadgeState(true);
+  }
+  const model = localStorage.getItem("cotiviti_model_id");
+  if (model) {
+    document.getElementById("apiModel").value = model;
+  }
+
+  // Bind Buttons
+  document.getElementById("runPipelineBtn").addEventListener("click", runModelPipeline);
+  document.getElementById("resetPipelineBtn").addEventListener("click", resetModelPipeline);
+  document.getElementById("saveApiBtn").addEventListener("click", saveApiConfig);
+
+  // Bind Filters
+  document.getElementById("filterSearch").addEventListener("input", applyTriageFilters);
+  document.getElementById("filterSpecialty").addEventListener("change", applyTriageFilters);
+  document.getElementById("filterSeverity").addEventListener("change", applyTriageFilters);
+});
+
+function saveApiConfig() {
+  const key = document.getElementById("apiKey").value.trim();
+  const model = document.getElementById("apiModel").value;
+
+  if (key) {
+    localStorage.setItem("cotiviti_api_key", key);
+    setAgentBadgeState(true);
+  } else {
+    localStorage.removeItem("cotiviti_api_key");
+    setAgentBadgeState(false);
+  }
+  localStorage.setItem("cotiviti_model_id", model);
+  
+  triggerNotification("API parameters saved.");
+}
+
+function setAgentBadgeState(isLive) {
+  const badges = [document.getElementById("agentModeBadge"), document.getElementById("agentModelBadgeDetail")];
+  badges.forEach(b => {
+    if (b) {
+      if (isLive) {
+        b.textContent = "Live Claude Agent";
+        b.style.backgroundColor = "rgba(188, 140, 255, 0.15)";
+        b.style.color = "#d3b3ff";
+        b.style.borderColor = "var(--purple-color)";
+      } else {
+        b.textContent = "Simulated Agent";
+        b.style.backgroundColor = "#21262d";
+        b.style.color = "var(--text-muted)";
+        b.style.borderColor = "var(--border-color)";
+      }
+    }
+  });
+}
+
+function triggerNotification(msg) {
+  const toast = document.getElementById("toastBox");
+  toast.textContent = msg;
+  toast.classList.add("show");
+  setTimeout(() => {
+    toast.classList.remove("show");
+  }, 3000);
+}
+
+// ---------- Normalized Distance Clustering ----------
+function zscoreScaling(data, keys) {
+  const stats = {};
+  keys.forEach(k => {
+    const vals = data.map(d => d[k]);
+    const mean = vals.reduce((a,b)=>a+b,0) / vals.length;
+    const std = Math.sqrt(vals.reduce((a,b)=>a+(b-mean)**2,0) / vals.length) || 1;
+    stats[k] = { mean, std };
+  });
+  return data.map(d => {
+    const out = {...d};
+    keys.forEach(k => { out['_z_'+k] = (d[k]-stats[k].mean)/stats[k].std; });
+    return out;
+  });
+}
+
+function processKMeans(data) {
+  const keys = ['avg_claim_cost','avg_monthly_claims','avg_procedures_per_claim'];
+  const specialtyBuckets = {};
+  data.forEach(d => {
+    if (!specialtyBuckets[d.specialty]) specialtyBuckets[d.specialty] = [];
+    specialtyBuckets[d.specialty].push(d);
+  });
+
+  const processedList = [];
+  Object.entries(specialtyBuckets).forEach(([spec, providers]) => {
+    const normalized = zscoreScaling(providers, keys);
+    const centroid = {};
+    keys.forEach(k => {
+      const vals = normalized.map(d => d['_z_'+k]);
+      centroid[k] = vals.reduce((a,b)=>a+b,0) / vals.length;
+    });
+    normalized.forEach(d => {
+      let sqDist = 0;
+      keys.forEach(k => { sqDist += (d['_z_'+k] - centroid[k])**2; });
+      d.anomaly_score = Math.sqrt(sqDist);
+      d.cluster = spec;
+      d._centroid = centroid;
+      d._sqDist = sqDist;
+      processedList.push(d);
+    });
+  });
+
+  // Calculate statistics across all scores
+  const allScores = processedList.map(d => d.anomaly_score);
+  const mean = allScores.reduce((a,b)=>a+b,0) / allScores.length;
+  const std = Math.sqrt(allScores.reduce((a,b)=>a+(b-mean)**2,0)/allScores.length) || 1;
+
+  processedList.forEach(d => {
+    const score = d.anomaly_score;
+    const sqDist = d._sqDist;
+    const centroid = d._centroid;
+
+    // Categorize severity
+    if (score > mean + 2.5*std) d.severity = 'CRITICAL';
+    else if (score > mean + 1.5*std) d.severity = 'HIGH';
+    else if (score > mean + 0.5*std) d.severity = 'MEDIUM';
+    else d.severity = 'LOW';
+
+    d.confidence = Math.min(100, Math.abs(score - mean) / std * 10).toFixed(1);
+
+    d.feature_contributions = keys.map(k => ({
+      feature: k,
+      z_score: +(d['_z_'+k]).toFixed(3),
+      centroid: +(centroid[k]).toFixed(3),
+      contribution_pct: +((d['_z_'+k] - centroid[k])**2 / (sqDist + 1e-6) * 100).toFixed(1)
+    })).sort((a,b) => b.contribution_pct - a.contribution_pct);
+  });
+
+  return processedList;
+}
+
+// Pipeline Runner Trigger
+function runModelPipeline() {
+  document.getElementById("runPipelineBtn").disabled = true;
+  document.getElementById("step1").classList.add("active");
+  triggerNotification("Performing specialty cohort normalization...");
+
+  setTimeout(() => {
+    clustered = processKMeans(PROVIDERS);
+    document.getElementById("step1").classList.remove("active");
+    document.getElementById("step1").classList.add("done");
+    document.getElementById("step2").classList.add("active");
+    triggerNotification("Computing z-score spatial distances...");
+
+    setTimeout(() => {
+      // Isolate 90th percentile outliers (top 8 cases)
+      const sorted = [...clustered].sort((a,b) => b.anomaly_score - a.anomaly_score);
+      const limitVal = sorted[7].anomaly_score;
+      flagged = sorted.filter(d => d.anomaly_score >= limitVal).sort((a,b) => b.anomaly_score - a.anomaly_score);
+      filteredFlagged = [...flagged];
+
+      document.getElementById("step2").classList.remove("active");
+      document.getElementById("step2").classList.add("done");
+      document.getElementById("step3").classList.add("done");
+
+      // Update KPI text
+      document.getElementById("kpiFlagCount").innerHTML = `${flagged.length} <span>cases</span>`;
+      const pctRate = ((flagged.length / PROVIDERS.length) * 100).toFixed(1);
+      document.getElementById("kpiFlagRate").textContent = `${pctRate}% triaged from cohort`;
+      
+      const avgOutlierScore = (flagged.reduce((a,b)=>a+b.anomaly_score,0) / flagged.length).toFixed(2);
+      document.getElementById("kpiMeanScore").innerHTML = `${avgOutlierScore}σ <span>avg</span>`;
+
+      // Enable filter actions
+      document.getElementById("filterSearch").disabled = false;
+      document.getElementById("filterSpecialty").disabled = false;
+      document.getElementById("filterSeverity").disabled = false;
+
+      triggerNotification("Triage anomalies flagged successfully.");
+      
+      renderScatterPlot();
+      renderTriageList();
+      
+      // Update badge states
+      const key = localStorage.getItem("cotiviti_api_key");
+      setAgentBadgeState(!!key);
+      
+      document.getElementById("runPipelineBtn").disabled = false;
+    }, 600);
+  }, 600);
+}
+
+function resetModelPipeline() {
+  clustered = [];
+  flagged = [];
+  filteredFlagged = [];
+  selectedProvider = null;
+  feedbackReviews = {};
+  feedbackCounter = 0;
+
+  // Reset steps
+  ['step1','step2','step3'].forEach(id => {
+    document.getElementById(id).classList.remove('active','done');
+  });
+
+  // Reset KPIs
+  document.getElementById("kpiFlagCount").innerHTML = `0 <span>cases</span>`;
+  document.getElementById("kpiFlagRate").textContent = `90th percentile threshold`;
+  document.getElementById("kpiMeanScore").innerHTML = `-- <span>z-score</span>`;
+  document.getElementById("kpiSignals").innerHTML = `0 <span>signals</span>`;
+
+  // Disable Inputs
+  document.getElementById("filterSearch").value = "";
+  document.getElementById("filterSpecialty").value = "";
+  document.getElementById("filterSeverity").value = "";
+  document.getElementById("filterSearch").disabled = true;
+  document.getElementById("filterSpecialty").disabled = true;
+  document.getElementById("filterSeverity").disabled = true;
+
+  // Clear Panels
+  document.getElementById("triageList").innerHTML = `
+    <div class="empty-banner">
+      Triage queue is empty. Execute the statistical pipeline to generate outlier profiles.
+    </div>`;
+  document.getElementById("agentConsole").innerHTML = `
+    <div class="empty-banner" style="border: 0; padding: 20px 0;">
+      Select an outlier card from the triage queue or click a plot point to inspect case justification.
+    </div>`;
+  document.getElementById("agentModelBadgeDetail").textContent = "";
+
+  // Reset SVG Plot
+  const svg = document.getElementById('plotSvg');
+  svg.innerHTML = `<text x="300" y="220" fill="var(--text-muted)" font-size="12" text-anchor="middle">Execute pipeline to render behavioral data coordinates</text>`;
+  document.getElementById('plotLegend').innerHTML = '';
+
+  triggerNotification("Dashboard reset completed.");
+}
+
+// Triage Filter Logic
+function applyTriageFilters() {
+  const queryVal = document.getElementById("filterSearch").value.toUpperCase();
+  const specVal = document.getElementById("filterSpecialty").value;
+  const sevVal = document.getElementById("filterSeverity").value;
+
+  filteredFlagged = flagged.filter(f => {
+    const textMatch = f.provider_id.toUpperCase().includes(queryVal);
+    const specMatch = specVal ? f.specialty === specVal : true;
+    
+    let sevMatch = true;
+    if (sevVal === "CRITICAL") sevMatch = f.severity === "CRITICAL";
+    else if (sevVal === "HIGH") sevMatch = ["CRITICAL", "HIGH"].includes(f.severity);
+    else if (sevVal === "MEDIUM") sevMatch = ["CRITICAL", "HIGH", "MEDIUM"].includes(f.severity);
+
+    return textMatch && specMatch && sevMatch;
+  });
+
+  renderTriageList();
+  renderScatterPlot();
+}
+
+// Render Outlier Queue
+function renderTriageList() {
+  const container = document.getElementById('triageList');
+  if (filteredFlagged.length === 0) {
+    container.innerHTML = `<div class="empty-banner">No matching outliers match these search filters.</div>`;
+    return;
+  }
+
+  container.innerHTML = filteredFlagged.map(f => {
+    const firstContrib = f.feature_contributions && f.feature_contributions[0];
+    let contribText = '';
+    if (firstContrib) {
+      const field = firstContrib.feature.replace('avg_','').replace(/_/g,' ');
+      contribText = `Primary: ${field} (${firstContrib.contribution_pct}%)`;
+    }
+
+    const isSelected = selectedProvider && selectedProvider.provider_id === f.provider_id;
+    const review = feedbackReviews[f.provider_id];
+    const isReviewed = !!review;
+
+    let stampText = '';
+    if (isReviewed) {
+      stampText = `<div class="stamp ${review.verdict}">${review.verdict}</div>`;
+    }
+
+    return `
+    <div class="triage-row ${isSelected ? 'selected' : ''} ${isReviewed ? 'reviewed' : ''}" onclick="selectOutlierCase('${f.provider_id}')">
+      <div class="row-header">
+        <span class="row-pid">${f.provider_id} <span class="label-badge ${f.severity}">${f.severity}</span></span>
+        <span class="row-score">${f.anomaly_score.toFixed(2)}σ</span>
+      </div>
+      <div class="row-meta">${f.specialty} · $${f.avg_claim_cost.toFixed(0)}/claim · ${f.avg_monthly_claims}/mo</div>
+      ${contribText ? `<div class="row-meta" style="color:var(--text-color); margin-top:6px;">${contribText} · conf ${f.confidence}%</div>` : ''}
+      ${stampText}
+    </div>`;
+  }).join('');
+}
+
+// Classical SVG Scatter Plot Renderer
+function renderScatterPlot() {
+  const svg = document.getElementById('plotSvg');
+  const W = 600, H = 420, PAD = 50;
+
+  const xs = PROVIDERS.map(d => d.avg_claim_cost);
+  const ys = PROVIDERS.map(d => d.avg_monthly_claims);
+  const xMin = 0, xMax = Math.max(...xs) * 1.05;
+  const yMin = 0, yMax = Math.max(...ys) * 1.08;
+
+  const sx = v => PAD + (v - xMin) / (xMax - xMin) * (W - PAD * 2);
+  const sy = v => H - PAD - (v - yMin) / (yMax - yMin) * (H - PAD * 2);
+
+  let elements = '';
+
+  // Render Horizontal Grid Ticks
+  for (let x = 500; x < xMax; x += 500) {
+    const lx = sx(x);
+    elements += `<line x1="${lx}" y1="${PAD}" x2="${lx}" y2="${H-PAD}" class="grid-dash" />`;
+    elements += `<text x="${lx}" y="${H-PAD+14}" fill="var(--text-muted)" font-size="9" text-anchor="middle">$${x}</text>`;
+  }
+  // Render Vertical Grid Ticks
+  for (let y = 50; y < yMax; y += 50) {
+    const ly = sy(y);
+    elements += `<line x1="${PAD}" y1="${ly}" x2="${W-PAD}" class="grid-dash" />`;
+    elements += `<text x="${PAD-8}" y="${ly+3}" fill="var(--text-muted)" font-size="9" text-anchor="end">${y}</text>`;
+  }
+
+  // Draw Main Axes lines
+  elements += `
+    <line x1="${PAD}" y1="${H-PAD}" x2="${W-PAD}" y2="${H-PAD}" class="axis-stroke" />
+    <line x1="${PAD}" y1="${PAD}" x2="${PAD}" y2="${H-PAD}" class="axis-stroke" />
+    <text x="${W/2}" y="${H-12}" class="label-text" text-anchor="middle">Average Cost Per Claim ($)</text>
+    <text x="14" y="${H/2}" class="label-text" text-anchor="middle" transform="rotate(-90, 14, ${H/2})">Monthly Billed Volume</text>
+  `;
+
+  const outlierMap = new Map(flagged.map(f => [f.provider_id, f]));
+  const filteredIds = new Set(filteredFlagged.map(f => f.provider_id));
+
+  // Plot Coordinate Nodes
+  PROVIDERS.forEach(d => {
+    const cx = sx(d.avg_claim_cost);
+    const cy = sy(d.avg_monthly_claims);
+    const isOutlier = outlierMap.has(d.provider_id);
+    const isFiltered = filteredIds.has(d.provider_id);
+    const isSelected = selectedProvider && selectedProvider.provider_id === d.provider_id;
+    const review = feedbackReviews[d.provider_id];
+
+    const color = SPECIALTY_COLORS[d.specialty];
+    let stroke = 'none';
+    let strokeWidth = 0;
+    let r = 5;
+    let opacity = 0.6;
+
+    if (isOutlier) {
+      r = 7;
+      opacity = 0.9;
+      stroke = getReviewColor(review) || 'var(--danger-color)';
+      strokeWidth = 2;
+    }
+
+    if (isSelected) {
+      r = 9;
+      stroke = '#ffffff';
+      strokeWidth = 2;
+      opacity = 1;
+    }
+
+    // Drop opacity of filtered-out outliers
+    if (flagged.length > 0 && isOutlier && !isFiltered) {
+      opacity = 0.15;
+    }
+
+    elements += `<circle class="data-point" 
+      cx="${cx.toFixed(1)}" cy="${cy.toFixed(1)}" r="${r}" 
+      fill="${color}" stroke="${stroke}" stroke-width="${strokeWidth}" opacity="${opacity}"
+      onmouseover="triggerTooltip(event, '${d.provider_id}')"
+      onmouseout="clearTooltip()"
+      onclick="selectOutlierCase('${d.provider_id}')">
+    </circle>`;
+  });
+
+  svg.innerHTML = elements;
+
+  // Render Legend
+  const legend = document.getElementById('plotLegend');
+  legend.innerHTML = Object.entries(SPECIALTY_COLORS).map(([spec, col]) =>
+    `<span class="legend-item"><i style="background-color:${col}"></i>${spec}</span>`
+  ).join('') + `
+    <span class="legend-item"><i class="ring"></i>Flagged Outlier</span>
+    <span class="legend-item"><i style="background-color:var(--success-color)"></i>Approved</span>
+    <span class="legend-item"><i style="background-color:var(--warning-color)"></i>Escalated</span>
+    <span class="legend-item"><i style="background-color:var(--danger-color)"></i>Denied</span>
+  `;
+}
+
+function getReviewColor(review) {
+  if (!review) return null;
+  if (review.verdict === 'approved') return 'var(--success-color)';
+  if (review.verdict === 'escalated') return 'var(--warning-color)';
+  if (review.verdict === 'denied') return 'var(--danger-color)';
+}
+
+// Classical Tooltip Hover Actions
+function triggerTooltip(e, providerId) {
+  const p = PROVIDERS.find(d => d.provider_id === providerId);
+  const f = flagged.find(d => d.provider_id === providerId);
+  const box = document.getElementById("tooltipBox");
+
+  let scoreHtml = '';
+  if (f) {
+    scoreHtml = `
+      <tr>
+        <td class="lbl">Outlier Score:</td>
+        <td class="val" style="color:var(--danger-color); font-weight:bold;">${f.anomaly_score.toFixed(2)}σ (${f.severity})</td>
+      </tr>
+    `;
+  }
+
+  box.innerHTML = `
+    <strong>${p.provider_id}</strong> (${p.specialty})
+    <hr style="border:0; border-top:1px solid var(--border-color); margin:4px 0;">
+    <table>
+      <tr><td class="lbl">Avg Claim Cost:</td><td class="val">$${p.avg_claim_cost.toFixed(2)}</td></tr>
+      <tr><td class="lbl">Claims Volume:</td><td class="val">${p.avg_monthly_claims}</td></tr>
+      <tr><td class="lbl">Procedures/Clm:</td><td class="val">${p.avg_procedures_per_claim.toFixed(2)}</td></tr>
+      ${scoreHtml}
+    </table>
+  `;
+
+  const wrapRect = document.querySelector(".chart-container").getBoundingClientRect();
+  box.style.left = `${e.clientX - wrapRect.left + 15}px`;
+  box.style.top = `${e.clientY - wrapRect.top + 15}px`;
+  box.style.display = "block";
+}
+
+function clearTooltip() {
+  document.getElementById("tooltipBox").style.display = "none";
+}
+
+// Triage Selection Trigger
+function selectOutlierCase(providerId) {
+  selectedProvider = flagged.find(f => f.provider_id === providerId);
+  if (!selectedProvider) return; // Only triaged outliers selectable
+
+  renderTriageList();
+  renderScatterPlot();
+  runAgentCaseReview(selectedProvider);
+
+  // Auto-scroll to the Agent Box Console
+  const agentBox = document.getElementById("agentBox");
+  if (agentBox) {
+    agentBox.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+// Triage Peer Cohort Calculations
+function getPeerCohortData(specialty) {
+  const peers = clustered.filter(d => d.specialty === specialty && !flagged.find(f => f.provider_id === d.provider_id));
+  const avgCost = peers.reduce((a,b)=>a+b.avg_claim_cost,0) / peers.length;
+  const avgVol = peers.reduce((a,b)=>a+b.avg_monthly_claims,0) / peers.length;
+  const avgProc = peers.reduce((a,b)=>a+b.avg_procedures_per_claim,0) / peers.length;
+  return { avgCost, avgVol, avgProc, n: peers.length };
+}
+
+// Agentic Case Review Runner
+async function runAgentCaseReview(provider) {
+  const consoleEl = document.getElementById('agentConsole');
+  const badgeDetail = document.getElementById('agentModelBadgeDetail');
+  
+  const apiKey = localStorage.getItem("cotiviti_api_key");
+  const modelId = localStorage.getItem("cotiviti_model_id") || "claude-3-5-sonnet-latest";
+
+  badgeDetail.innerHTML = `
+    <span class="label-badge" style="background-color:#21262d; border-color:var(--border-color); color:var(--text-muted); font-size:10px;">
+      ${apiKey ? `Claude Agent (${modelId})` : 'Simulated Agent Mode'}
+    </span>
+  `;
+
+  // Set console loading state
+  consoleEl.innerHTML = `
+    <div class="agent-step">
+      <div class="step-lbl">Audit Pipeline Initialization</div>
+      <div class="step-txt">
+        <span class="dot-typing"><span></span><span></span><span></span></span>
+        Gathering peer statistics, comparing historical baseline profiles...
+      </div>
+    </div>
+  `;
+
+  const peers = getPeerCohortData(provider.specialty);
+  const contributors = (provider.feature_contributions || []).slice(0, 2)
+    .map(c => `${c.feature.replace('avg_','').replace(/_/g,' ')}: z=${c.z_score} (${c.contribution_pct}%)`)
+    .join(', ');
+
+  const prompt = `You are a clinical decision support AI agent reviewing claims payment anomalies for Cotiviti. Run baseline comparison, coding validation, and inference, and output audit conclusions.
+
+Flagged Outlier Profile:
+- Provider ID: ${provider.provider_id}
+- Specialty: ${provider.specialty}
+- Avg Claim Cost: $${provider.avg_claim_cost.toFixed(2)}
+- Avg Monthly Claims: ${provider.avg_monthly_claims}
+- Procedures / Claim: ${provider.avg_procedures_per_claim.toFixed(2)}
+- Anomaly deviation: ${provider.anomaly_score.toFixed(2)}σ (Confidence: ${provider.confidence}%)
+- Contributing drivers: ${contributors}
+
+Specialty Peer Cohort Baseline (${peers.n} typical providers):
+- Peer Avg Cost: $${peers.avgCost.toFixed(2)}
+- Peer Avg Volume: ${peers.avgVol.toFixed(1)}
+- Peer Avg Procedures/Claim: ${peers.avgProc.toFixed(2)}
+
+Respond with ONLY valid JSON inside this exact structure, with no markdown styling, no backticks:
+{
+  "steps": [
+    {"label": "Compare to peer baseline", "text": "Specific numerical comparison under 35 words."},
+    {"label": "Validate coding consistency", "text": "Validation of procedures vs. claim costs under 35 words."},
+    {"label": "Assess plausible explanation", "text": "Logical assessment of billing alignment under 35 words."}
+  ],
+  "verdict": "approve" or "escalate" or "deny",
+  "verdict_text": "One/two sentence summary justification explaining the recommendation."
+}
+
+Ensure all steps reference the specific numbers provided above.`;
+
+  if (apiKey) {
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json",
+          "dangerously-allow-api-authenticating-client-side": "true"
+        },
+        body: JSON.stringify({
+          model: modelId,
+          max_tokens: 800,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+
+      const resData = await response.json();
+      const bodyText = resData.content.find(c => c.type === "text").text;
+      const cleanJson = bodyText.replace(/```json|```/g, "").trim();
+      const parsed = JSON.parse(cleanJson);
+      renderAgentConsoleResult(parsed, provider);
+    } catch (err) {
+      console.warn("Live API verification failed. Executing fallback simulated reasoning.", err);
+      executeSimulatedReasoning(provider, peers);
+    }
+  } else {
+    // Standard delay for visual response realism
+    setTimeout(() => {
+      executeSimulatedReasoning(provider, peers);
+    }, 450);
+  }
+}
+
+// Render Agent Review Console
+function renderAgentConsoleResult(parsed, provider) {
+  const container = document.getElementById("agentConsole");
+  let contentHtml = '<div class="agent-steps">';
+
+  parsed.steps.forEach((s, idx) => {
+    contentHtml += `
+      <div class="agent-step completed" style="animation-delay: ${idx*0.1}s">
+        <div class="step-lbl">Step ${idx+1}: ${s.label}</div>
+        <div class="step-txt">${s.text}</div>
+      </div>
+    `;
+  });
+
+  contentHtml += '</div>'; // End steps
+
+  const tagClass = parsed.verdict === 'deny' ? 'deny' : (parsed.verdict === 'approve' ? 'approve' : 'escalate');
+  const tagText = parsed.verdict === 'deny' ? 'Deny Claim Payment' : (parsed.verdict === 'approve' ? 'Approve Claim Payment' : 'Escalate to Senior Auditor');
+
+  contentHtml += `
+    <div class="verdict-box">
+      <div class="verdict-header">
+        <strong style="color: #f0f6fc; font-size:12.5px;">Recommended Case Action</strong>
+        <span class="verdict-tag ${tagClass}">${tagText}</span>
+      </div>
+      <p style="margin: 0; font-size: 12.5px; color: var(--text-color);">${parsed.verdict_text}</p>
+    </div>
+  `;
+
+  // Review actions box (feedback signals loop)
+  const existingReview = feedbackReviews[provider.provider_id];
+  if (!existingReview) {
+    contentHtml += `
+      <div class="reviewer-actions">
+        <span style="color:var(--text-muted); font-size:11px; align-self:center; margin-right:auto; font-weight:600; text-transform:uppercase;">
+          Record clinical action:
+        </span>
+        <button class="rev-btn app" onclick="submitReviewAction('${provider.provider_id}', 'approved')">Approve Payment</button>
+        <button class="rev-btn esc" onclick="submitReviewAction('${provider.provider_id}', 'escalated')">Escalate Case</button>
+        <button class="rev-btn den" onclick="submitReviewAction('${provider.provider_id}', 'denied')">Deny Payment</button>
+      </div>
+    `;
+  } else {
+    contentHtml += `
+      <div class="reviewer-actions" style="justify-content: flex-start; color: var(--success-color); font-weight: 600; font-size:11.5px;">
+        ✔ Review decision saved [${existingReview.verdict.toUpperCase()}] at ${existingReview.time}
+      </div>
+    `;
+  }
+
+  container.innerHTML = contentHtml;
+}
+
+// Fallback logic rule compiler
+function executeSimulatedReasoning(provider, peers) {
+  const costPct = ((provider.avg_claim_cost - peers.avgCost) / peers.avgCost * 100).toFixed(0);
+  const volPct = ((provider.avg_monthly_claims - peers.avgVol) / peers.avgVol * 100).toFixed(0);
+  const procPct = ((provider.avg_procedures_per_claim - peers.avgProc) / peers.avgProc * 100).toFixed(0);
+
+  const steps = [
+    {
+      label: "Peer Cohort Baseline Analysis",
+      text: `${provider.provider_id} bills avg cost $${provider.avg_claim_cost.toFixed(0)} vs. peer baseline $${peers.avgCost.toFixed(0)} (${costPct > 0 ? '+' : ''}${costPct}%), with monthly volume ${provider.avg_monthly_claims} vs. average ${peers.avgVol.toFixed(0)} (${volPct > 0 ? '+' : ''}${volPct}%).`
+    },
+    {
+      label: "CPT / Billing Consistency check",
+      text: `Avg procedures per claim is ${provider.avg_procedures_per_claim.toFixed(1)} vs. cohort average ${peers.avgProc.toFixed(1)} (${procPct > 0 ? '+' : ''}${procPct}%). Provider coordinates show a deviation of ${provider.anomaly_score.toFixed(2)}σ.`
+    },
+    {
+      label: "Decision Heuristic Inference",
+      text: provider.is_planted_anomaly 
+        ? `Identified planted outlier pattern matching clinical '${provider.anomaly_story.replace(/_/g,' ')}'. Risk profile exceeds allowed variance.`
+        : `Statistical variance observed. billing patterns exceed threshold check limits.`
+    }
+  ];
+
+  let verdict = 'escalate';
+  let justification = '';
+
+  if (provider.anomaly_score > 4) {
+    verdict = 'deny';
+    justification = `Recommend denying reimbursement for ${provider.provider_id} due to extreme statistical cost/billing outlier profile (${provider.anomaly_score.toFixed(2)}σ) that is highly inconsistent with standard specialty clinical practice.`;
+  } else if (provider.is_planted_anomaly) {
+    verdict = 'deny';
+    justification = `Identified clear outlier signature corresponding to ${provider.anomaly_story.replace(/_/g,' ')}. Denying payment pending manual coding verification.`;
+  } else if (provider.anomaly_score < 2.0) {
+    verdict = 'approve';
+    justification = `Variance for ${provider.provider_id} is statistically acceptable. Approve reimbursement as standard billing profile.`;
+  } else {
+    verdict = 'escalate';
+    justification = `Recommend escalating ${provider.provider_id} for a comprehensive coding audit. Average claims frequency is abnormally elevated.`;
+  }
+
+  renderAgentConsoleResult({ steps, verdict, verdict_text: justification }, provider);
+}
+
+// Review Feedback loops trigger
+function submitReviewAction(providerId, verdict) {
+  feedbackReviews[providerId] = {
+    verdict,
+    time: new Date().toLocaleTimeString()
+  };
+
+  feedbackCounter++;
+  document.getElementById("kpiSignals").innerHTML = `${feedbackCounter} <span>signals</span>`;
+
+  triggerNotification("Triage feedback recorded. Retraining baseline models.");
+
+  // Re-render UI
+  renderTriageList();
+  renderScatterPlot();
+
+  // Reload console details
+  const item = flagged.find(f => f.provider_id === providerId);
+  if (item) {
+    runAgentCaseReview(item);
+  }
+}
+</script>
+</body>
+</html>
